@@ -1,0 +1,22 @@
+<section class="hero-section">
+  <div class="hero-content">
+    <span class="hero-eyebrow">DEPUIS LES PALMERAIES DE TUNISIE</span>
+    <h1 class="hero-title">
+      <span class="hero-title-primary">Dhaoui</span>
+      <span class="hero-title-secondary">Dattes</span>
+    </h1>
+    <p class="hero-description">
+      Des dattes Deglet Nour d'exception, cultivées avec passion dans les oasis du sud tunisien. 
+      Un goût authentique, une qualité incomparable.
+    </p>
+    <div class="hero-actions">
+      <button class="btn-primary" (click)="scrollToProducts()">DÉCOUVRIR NOS PRODUITS</button>
+      <a routerLink="/a-propos" class="btn-secondary">NOTRE HISTOIRE</a>
+    </div>
+  </div>
+  <div class="hero-image">
+    <img [src]="heroImageUrl()" 
+         alt="Dattes Deglet Nour sur planche en bois"
+         (error)="onImageError($event)" />
+  </div>
+</section>

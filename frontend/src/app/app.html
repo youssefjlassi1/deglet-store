@@ -1,0 +1,54 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" routerLink="/">
+      <img src="/logo.png" alt="Frigorifique du Sud" class="brand__logo" />
+      <span>
+        <strong>Frigorifique du Sud</strong>
+        <small>Premium Dates Platform</small>
+      </span>
+    </a>
+
+    <nav class="topbar__nav">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Home</a>       
+      <a routerLink="/a-propos" routerLinkActive="is-active">About Us</a>       
+      <a routerLink="/produits" routerLinkActive="is-active">Our Products</a>   
+      <a routerLink="/contact" routerLinkActive="is-active">Contact</a>
+      @if (authService.currentUser()?.role === 'admin') {
+        <a routerLink="/admin" routerLinkActive="is-active">Dashboard admin</a> 
+      }
+    </nav>
+
+    <div class="topbar__actions">
+      <a routerLink="/panier" class="cart-icon" routerLinkActive="is-active" title="Voir le panier">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cart-icon__svg">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span class="cart-badge" *ngIf="cartCount() > 0">{{ cartCount() }}</span>
+      </a>
+
+      @if (authService.currentUser(); as user) {
+        <div class="user-pill">
+          <span>{{ user.fullName }}</span>
+          <small>{{ user.role === 'admin' ? 'Administrateur' : 'Client' }}</small>                                                                                      </div>
+        <button type="button" class="ghost-button" (click)="logout()">Déconnexion</button>                                                                            } @else {
+        <button type="button" class="ghost-button" (click)="openAuthModal()">Connexion</button>                                                                       }
+    </div>
+  </header>
+
+  <main class="page-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  @if (isAuthModalOpen()) {
+    <app-auth-modal (close)="closeAuthModal()"></app-auth-modal>
+  }
+
+  <app-toast></app-toast>
+
+  @if (!authService.currentUser() || authService.currentUser()?.role === 'client') {
+    <app-chatbot-widget></app-chatbot-widget>
+  }
+</div>
+

@@ -1,0 +1,25 @@
+@if (toastService.toast().visible) {
+  <div class="toast" role="status" aria-live="polite">
+    <span class="toast__icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </span>
+    <div class="toast__content">
+      <strong class="toast__message">{{ toastService.toast().message }}</strong>
+      @if (toastService.toast().productName) {
+        <span class="toast__product">« {{ toastService.toast().productName }} »</span>
+      }
+    </div>
+
+    @if (toastService.toast().actionLabel) {
+      <button type="button" class="toast__action" (click)="toastService.runAction()">
+        {{ toastService.toast().actionLabel }}
+      </button>
+    }
+
+    <button type="button" class="toast__close" (click)="toastService.dismiss()" aria-label="Fermer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+}

@@ -1,0 +1,45 @@
+<section class="products-section" id="products">
+  <div class="products-header">
+    <span class="section-eyebrow">NOS PRODUITS</span>
+    <h2 class="section-title">
+      <span class="title-primary">Saveurs</span>
+      <span class="title-accent">d'Exception</span>
+    </h2>
+    <p class="section-description">
+      Chaque datte est sélectionnée avec soin pour vous garantir une qualité exceptionnelle.
+    </p>
+  </div>
+
+  <div class="category-filters">
+    @for (category of categories; track category) {
+      <button
+        class="category-btn"
+        [class.active]="selectedCategory() === category"
+        (click)="selectCategory(category)"
+        type="button">
+        {{ category }}
+      </button>
+    }
+  </div>
+
+  <div class="products-grid">
+    @for (product of filteredProducts(); track product.id) {
+      <article class="product-card">
+        <div class="product-image">
+          <img [src]="product.imageUrl" [alt]="product.name" />
+          <span class="product-weight">{{ getProductWeight(product) }}</span>
+        </div>
+        <div class="product-info">
+          <h3 class="product-title">{{ product.name }}</h3>
+          <p class="product-description">{{ product.description }}</p>
+          <div class="product-footer">
+            <span class="product-price">{{ product.price }} DT</span>
+            <button class="add-btn" (click)="addToCart(product)" [disabled]="product.stock === 0">
+              + Ajouter
+            </button>
+          </div>
+        </div>
+      </article>
+    }
+  </div>
+</section>

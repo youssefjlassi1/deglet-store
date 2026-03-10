@@ -1,0 +1,194 @@
+<section class="hero">
+  <div class="hero__image" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden; max-height: 400px; display: flex; justify-content: center; align-items: center;">
+    <img src="https://images.unsplash.com/photo-1596434442656-78ceae16b473?auto=format&fit=crop&q=80&w=1200" alt="Dattes de Tunisie" style="width: 100%; height: auto; object-fit: cover;" />
+  </div>
+  <div class="hero__content">
+    <span class="eyebrow">Frigorifique du Sud · Tunisie</span>
+    <h1>Une plateforme élégante pour vendre les meilleures dattes premium.</h1>
+    <p>
+      Catalogue moderne, commande rapide, suivi client et espace administrateur complet pour gérer les
+      ventes, le stock et la performance commerciale.
+    </p>
+
+    <div class="hero__stats">
+      <article>
+        <strong>{{ products().length }}</strong>
+        <span>Produits catalogués</span>
+      </article>
+      <article>
+        <strong>{{ featuredProducts().length }}</strong>
+        <span>Références premium</span>
+      </article>
+      <article>
+        <strong>{{ cartCount() }}</strong>
+        <span>Articles dans le panier</span>
+      </article>
+    </div>
+  </div>
+
+  <aside class="auth-card" id="auth">
+    <h2>{{ authService.isAuthenticated() ? 'Votre espace client' : 'Connexion / inscription' }}</h2>
+
+    @if (authService.currentUser(); as user) {
+      <div class="auth-card__summary">
+        <strong>{{ user.fullName }}</strong>
+        <span>{{ user.email }}</span>
+        <small>{{ user.role === 'admin' ? 'Administrateur' : 'Client connecté' }}</small>
+      </div>
+      <button type="button" class="secondary-button" (click)="logout()">Se déconnecter</button>
+    } @else {
+      <div class="form-grid">
+        <form [formGroup]="loginForm" (ngSubmit)="login()" class="panel-form">
+          <h3>Connexion rapide</h3>
+          <input type="email" formControlName="email" placeholder="Email" />
+          <input type="password" formControlName="password" placeholder="Mot de passe" />
+          <button type="submit" [disabled]="loading()">{{ loading() ? 'Connexion...' : 'Se connecter' }}</button>
+        </form>
+
+        <form [formGroup]="registerForm" (ngSubmit)="register()" class="panel-form">
+          <h3>Créer un compte client</h3>
+          <input type="text" formControlName="fullName" placeholder="Nom complet" />
+          <input type="email" formControlName="email" placeholder="Email" />
+          <input type="text" formControlName="phone" placeholder="Téléphone" />
+          <input type="password" formControlName="password" placeholder="Mot de passe" />
+          <button type="submit" [disabled]="loading()">{{ loading() ? 'Création...' : 'S’inscrire' }}</button>
+        </form>
+      </div>
+
+      @if (authError()) {
+        <p class="feedback error">{{ authError() }}</p>
+      }
+    }
+  </aside>
+</section>
+
+<section class="section-grid">
+  <div class="catalog-section">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Boutique premium</span>
+        <h2>Nos collections de dattes</h2>
+      </div>
+      <p>Des produits pensés pour la vente au détail, les coffrets premium et les commandes en gros.</p>
+    </div>
+
+    <div class="product-grid">
+      @for (product of products(); track product.id) {
+        <article class="product-card">
+          <img [src]="product.imageUrl" [alt]="product.name" [title]="product.name" />
+          <div class="product-card__body">
+            <div class="product-card__meta">
+              <span>{{ product.variety }}</span>
+              @if (product.featured) {
+                <strong>Best seller</strong>
+              }
+            </div>
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <ul>
+              <li>Origine: {{ product.originRegion }}</li>
+              <li>Récolte: {{ product.harvestYear }}</li>
+              <li>Stock: {{ product.stock }} unités</li>
+            </ul>
+            <div class="product-card__footer">
+              <strong>{{ product.price | currency: 'EUR' : 'symbol' : '1.2-2' }}</strong>
+              <button type="button" (click)="addToCart(product)" [disabled]="product.stock === 0">
+                {{ product.stock === 0 ? 'Rupture' : 'Ajouter' }}
+              </button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+
+  <aside class="cart-panel">
+    <div class="section-head compact">
+      <div>
+        <span class="eyebrow">Panier & checkout</span>
+        <h2>Commande client</h2>
+      </div>
+    </div>
+
+    <div class="cart-items">
+      @if (cart().length === 0) {
+        <p class="empty-state">Votre panier est vide. Ajoutez des produits pour commencer.</p>
+      } @else {
+        @for (item of cart(); track item.product.id) {
+          <article class="cart-item">
+            <div>
+              <strong>{{ item.product.name }}</strong>
+              <span>{{ item.product.price | currency: 'EUR' : 'symbol' : '1.2-2' }}</span>
+            </div>
+            <div class="cart-item__actions">
+              <button type="button" (click)="changeQuantity(item.product.id, -1)">−</button>
+              <span>{{ item.quantity }}</span>
+              <button type="button" (click)="changeQuantity(item.product.id, 1)">+</button>
+              <button type="button" class="remove" (click)="removeFromCart(item.product.id)">Supprimer</button>
+            </div>
+          </article>
+        }
+      }
+    </div>
+
+    <form class="checkout-form" [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
+      <input type="text" formControlName="shippingAddress" placeholder="Adresse de livraison" />
+      <input type="text" formControlName="city" placeholder="Ville" />
+      <input type="text" formControlName="phone" placeholder="Téléphone" />
+      <textarea rows="3" formControlName="notes" placeholder="Notes de commande"></textarea>
+
+      <div class="cart-total">
+        <span>Total</span>
+        <strong>{{ cartTotal() | currency: 'EUR' : 'symbol' : '1.2-2' }}</strong>
+      </div>
+
+      <button type="submit" class="primary-button" [disabled]="submittingOrder()">
+        {{ submittingOrder() ? 'Envoi...' : 'Valider la commande' }}
+      </button>
+
+      @if (orderMessage()) {
+        <p class="feedback">{{ orderMessage() }}</p>
+      }
+    </form>
+  </aside>
+</section>
+
+<section class="story-section">
+  <article class="story-card">
+    <span class="eyebrow">Pourquoi cette plateforme</span>
+    <h2>Une expérience pensée pour le client et pour l’équipe administrative.</h2>
+    <p>
+      Le client navigue dans un catalogue riche, passe commande facilement et consulte son historique.
+      L’administrateur suit les KPI, gère les commandes et pilote le stock depuis un dashboard unique.
+    </p>
+  </article>
+
+  <article class="orders-card">
+    <div class="section-head compact">
+      <div>
+        <span class="eyebrow">Historique</span>
+        <h2>Mes commandes</h2>
+      </div>
+    </div>
+
+    @if (!authService.isAuthenticated()) {
+      <p class="empty-state">Connectez-vous pour afficher l’historique de vos commandes.</p>
+    } @else if (orders().length === 0) {
+      <p class="empty-state">Aucune commande pour le moment.</p>
+    } @else {
+      <div class="orders-list">
+        @for (order of orders(); track order.id) {
+          <article class="order-item-card">
+            <div class="order-item-card__head">
+              <strong>#{{ order.id.slice(0, 8) }}</strong>
+              <span class="status-pill">{{ order.status }}</span>
+            </div>
+            <p>{{ order.createdAt | date: 'medium' }}</p>
+            <p>{{ order.total | currency: 'EUR' : 'symbol' : '1.2-2' }}</p>
+            <small>{{ order.shippingAddress }} · {{ order.city }}</small>
+          </article>
+        }
+      </div>
+    }
+  </article>
+</section>

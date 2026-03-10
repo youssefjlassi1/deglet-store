@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dhaoui-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dhaoui_dattes
+      POSTGRES_USER: dhaoui
+      POSTGRES_PASSWORD: dhaoui123
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

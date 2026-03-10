@@ -1,0 +1,46 @@
+<div class="chatbot">
+  <button type="button" class="chatbot__toggle" (click)="toggleOpen()">
+    <span class="chatbot__icon">💬</span>
+    <span class="chatbot__label">@if (isOpen()) { Fermer le chat } @else { Besoin d’aide ? }</span>
+  </button>
+
+  @if (isOpen()) {
+    <section class="chatbot__panel">
+      <header class="chatbot__header">
+        <div class="chatbot__title">
+          <span class="chatbot__dot"></span>
+          <div>
+            <strong>Assistant Frigorifique du Sud</strong>
+            <small>Réponses rapides à vos questions</small>
+          </div>
+        </div>
+        <button type="button" class="chatbot__close" (click)="toggleOpen()" aria-label="Fermer le chatbot">
+          ✕
+        </button>
+      </header>
+
+      <div class="chatbot__messages">
+        @for (message of messages(); track $index) {
+          <div class="chatbot__message" [class.chatbot__message--bot]="message.from === 'bot'" [class.chatbot__message--user]="message.from === 'user'">
+            <p>{{ message.text }}</p>
+          </div>
+        }
+      </div>
+
+      <footer class="chatbot__footer">
+        <p class="chatbot__hint">Questions fréquentes :</p>
+        <div class="chatbot__faq-list">
+          @for (item of faqs; track item.question) {
+            <button type="button" class="chatbot__faq-chip" (click)="selectFaq(item)">
+              {{ item.question }}
+            </button>
+          }
+        </div>
+        <p class="chatbot__disclaimer">
+          Les réponses sont générales. Pour des demandes spécifiques, veuillez utiliser la page “Contact”.
+        </p>
+      </footer>
+    </section>
+  }
+</div>
+

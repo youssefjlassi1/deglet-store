@@ -1,0 +1,70 @@
+<div class="modal-backdrop" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeModal()" aria-label="Close modal">&times;</button>
+    
+    <div class="modal-content">
+      <h2 class="modal-title">{{ isLoginView() ? 'Connexion' : 'Créer un compte' }}</h2>
+      
+      @if (authError()) {
+        <div class="alert alert-error">{{ authError() }}</div>
+      }
+
+      @if (isLoginView()) {
+        <form [formGroup]="loginForm" (ngSubmit)="login()" class="auth-form">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input id="login-email" type="email" formControlName="email" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Mot de passe</label>
+            <div class="password-wrapper">
+              <input id="login-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" class="form-control" />
+              <button type="button" class="password-toggle" (click)="togglePassword()">
+                {{ showPassword() ? 'Masquer' : 'Afficher' }}
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="primary-button full-width" [disabled]="loading()">
+            {{ loading() ? 'Connexion en cours...' : 'Se connecter' }}
+          </button>
+        </form>
+      } @else {
+        <form [formGroup]="registerForm" (ngSubmit)="register()" class="auth-form">
+          <div class="form-group">
+            <label for="reg-fullName">Nom complet</label>
+            <input id="reg-fullName" type="text" formControlName="fullName" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="reg-email">Email</label>
+            <input id="reg-email" type="email" formControlName="email" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="reg-phone">Téléphone (Optionnel)</label>
+            <input id="reg-phone" type="tel" formControlName="phone" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Mot de passe</label>
+            <div class="password-wrapper">
+              <input id="reg-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" class="form-control" />
+              <button type="button" class="password-toggle" (click)="togglePassword()">
+                {{ showPassword() ? 'Masquer' : 'Afficher' }}
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="primary-button full-width" [disabled]="loading()">
+            {{ loading() ? 'Création en cours...' : 'S\'inscrire' }}
+          </button>
+        </form>
+      }
+
+      <div class="modal-footer">
+        <p>
+          {{ isLoginView() ? "Pas encore de compte ?" : "Vous avez déjà un compte ?" }}
+          <button type="button" class="link-button" (click)="toggleView()">
+            {{ isLoginView() ? "S'inscrire" : "Se connecter" }}
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,297 @@
+<div class="cart-page">
+  <!-- Header Section -->
+  <div class="page-header">
+    <h1 class="page-title">Mon Panier</h1>
+    <p class="page-subtitle">Gérez vos articles et suivez vos commandes</p>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-container">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab() === 'cart'"
+      (click)="switchTab('cart')">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      Panier
+      <span *ngIf="cartItems().length > 0" class="badge">{{ cartItems().length }}</span>
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab() === 'orders'"
+      (click)="switchTab('orders')">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+      Mes Commandes
+      <span *ngIf="orders().length > 0" class="badge">{{ orders().length }}</span>
+    </button>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="orderSuccess" class="success-message">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Votre commande a été passée avec succès !</span>
+  </div>
+
+  <!-- Cart Tab Content -->
+  <div *ngIf="activeTab() === 'cart'" class="cart-content">
+    <div *ngIf="cartItems().length === 0" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+      </svg>
+      <h2>Votre panier est vide</h2>
+      <p>Découvrez nos délicieuses dattes et ajoutez-les à votre panier</p>
+      <a routerLink="/produits" class="btn-primary">Découvrir nos produits</a>
+    </div>
+
+    <div *ngIf="cartItems().length > 0" class="cart-grid">
+      <!-- Cart Items -->
+      <div class="cart-items-section">
+        <div class="section-header">
+          <h2>Articles dans votre panier</h2>
+          <span class="item-count">{{ cartItems().length }} article(s)</span>
+        </div>
+
+        <div class="cart-items-list">
+          <div *ngFor="let item of cartItems()" class="cart-item-card">
+            <div class="item-image">
+              <img [src]="item.product.imageUrl" [alt]="item.product.name" />
+            </div>
+            
+            <div class="item-details">
+              <h3 class="item-name">{{ item.product.name }}</h3>
+              <p class="item-variety">{{ item.product.variety }}</p>
+              <div class="item-price-row">
+                <span class="item-unit-price">{{ item.product.price }} TND / unité</span>
+                <span class="item-subtotal">{{ (item.product.price * item.quantity) | number:'1.2-2' }} TND</span>
+              </div>
+            </div>
+
+            <div class="item-controls">
+              <div class="quantity-control">
+                <button 
+                  type="button" 
+                  class="qty-btn minus"
+                  (click)="decreaseQuantity(item.product.id)">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                  </svg>
+                </button>
+                <input 
+                  type="number" 
+                  [value]="item.quantity" 
+                  (change)="updateQuantity(item.product.id, $event)" 
+                  min="1" 
+                  class="qty-input" />
+                <button 
+                  type="button" 
+                  class="qty-btn plus"
+                  (click)="increaseQuantity(item.product.id)">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+              
+              <button 
+                type="button" 
+                class="remove-btn"
+                (click)="removeItem(item.product.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checkout Form -->
+      <div class="checkout-section">
+        <div class="checkout-card">
+          <h2 class="checkout-title">Détails de facturation</h2>
+          
+          <div class="order-summary">
+            <div class="summary-row">
+              <span>Sous-total</span>
+              <span>{{ cartTotal() | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="summary-row">
+              <span>Livraison</span>
+              <span class="free">Gratuite</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row total">
+              <span>Total</span>
+              <span class="total-amount">{{ cartTotal() | number:'1.2-2' }} TND</span>
+            </div>
+          </div>
+
+          <form (ngSubmit)="submitOrder()" #orderForm="ngForm" class="checkout-form">
+            <div class="form-group">
+              <label class="form-label">
+                Adresse de livraison <span class="required">*</span>
+              </label>
+              <input 
+                type="text" 
+                [(ngModel)]="checkoutForm.shippingAddress" 
+                name="shippingAddress" 
+                required 
+                class="form-input"
+                placeholder="Entrez votre adresse complète" />
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">
+                  Ville <span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="checkoutForm.city" 
+                  name="city" 
+                  required 
+                  class="form-input"
+                  placeholder="Ville" />
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  Téléphone <span class="required">*</span>
+                </label>
+                <input 
+                  type="tel" 
+                  [(ngModel)]="checkoutForm.phone" 
+                  name="phone" 
+                  required 
+                  class="form-input"
+                  placeholder="XX XXX XXX" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Notes (optionnel)</label>
+              <textarea 
+                [(ngModel)]="checkoutForm.notes" 
+                name="notes" 
+                rows="3" 
+                class="form-textarea"
+                placeholder="Instructions spéciales pour la livraison..."></textarea>
+            </div>
+
+            <button 
+              type="submit" 
+              [disabled]="!orderForm.form.valid || isSubmitting" 
+              class="submit-btn">
+              <span *ngIf="!isSubmitting">
+                <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Confirmer la commande
+              </span>
+              <span *ngIf="isSubmitting" class="loading">
+                <span class="spinner"></span>
+                Traitement en cours...
+              </span>
+            </button>
+
+            <p *ngIf="!authService.isAuthenticated()" class="auth-notice">
+              <a href="/#auth">Connectez-vous</a> pour passer une commande
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders Tab Content -->
+  <div *ngIf="activeTab() === 'orders'" class="orders-content">
+    <div *ngIf="!authService.isAuthenticated()" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      <h2>Connexion requise</h2>
+      <p>Connectez-vous pour voir vos commandes</p>
+      <a href="/#auth" class="btn-primary">Se connecter</a>
+    </div>
+
+    <div *ngIf="authService.isAuthenticated() && loadingOrders()" class="loading-state">
+      <div class="spinner-large"></div>
+      <p>Chargement de vos commandes...</p>
+    </div>
+
+    <div *ngIf="authService.isAuthenticated() && !loadingOrders() && orders().length === 0" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h2>Aucune commande</h2>
+      <p>Vous n'avez pas encore passé de commande</p>
+      <a routerLink="/produits" class="btn-primary">Découvrir nos produits</a>
+    </div>
+
+    <div *ngIf="authService.isAuthenticated() && !loadingOrders() && orders().length > 0" class="orders-list">
+      <div *ngFor="let order of orders()" class="order-card">
+        <div class="order-header">
+          <div class="order-info">
+            <h3 class="order-number">Commande #{{ order.id.slice(0, 8) }}</h3>
+            <p class="order-date">Passée le {{ order.createdAt | date:'dd MMMM yyyy à HH:mm' }}</p>
+          </div>
+          <div class="order-status-badge" [style.background-color]="getStatusColor(order.status)">
+            {{ getStatusLabel(order.status) }}
+          </div>
+        </div>
+
+        <div class="order-progress">
+          <div class="progress-bar">
+            <div 
+              class="progress-fill" 
+              [style.width.%]="getStatusProgress(order.status)"
+              [style.background-color]="getStatusColor(order.status)">
+            </div>
+          </div>
+          <div class="progress-steps">
+            <div 
+              *ngFor="let step of getStatusSteps(order.status)" 
+              class="progress-step"
+              [class.active]="step.active"
+              [class.current]="step.current"
+              [style.color]="step.color">
+              <div class="step-dot" [style.background-color]="step.active ? step.color : 'rgba(221, 159, 82, 0.2)'" [style.border-color]="step.active ? step.color : 'rgba(221, 159, 82, 0.3)'"></div>
+              <span class="step-label">{{ step.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-items">
+          <div *ngFor="let orderItem of order.items" class="order-item">
+            <img [src]="orderItem.product.imageUrl" [alt]="orderItem.product.name" class="order-item-image" />
+            <div class="order-item-details">
+              <h4>{{ orderItem.product.name }}</h4>
+              <p>Quantité: {{ orderItem.quantity }} × {{ orderItem.unitPrice | number:'1.2-2' }} TND</p>
+            </div>
+            <div class="order-item-total">
+              {{ orderItem.subtotal | number:'1.2-2' }} TND
+            </div>
+          </div>
+        </div>
+
+        <div class="order-footer">
+          <div class="order-delivery-info">
+            <p><strong>Livraison à:</strong> {{ order.shippingAddress }}, {{ order.city }}</p>
+            <p><strong>Téléphone:</strong> {{ order.phone }}</p>
+            <p *ngIf="order.notes"><strong>Notes:</strong> {{ order.notes }}</p>
+          </div>
+          <div class="order-total">
+            <span>Total:</span>
+            <strong>{{ order.total | number:'1.2-2' }} TND</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

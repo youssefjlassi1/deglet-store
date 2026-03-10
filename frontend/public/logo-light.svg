@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" width="200" height="140">
+  <defs>
+    <!-- Gradient for date fruit -->
+    <linearGradient id="dateGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#F4D03F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E8B84A;stop-opacity:1" />
+    </linearGradient>
+    <!-- Highlight for date fruit -->
+    <linearGradient id="dateHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFF8DC;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FFD700;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Date fruit - main shape -->
+  <ellipse cx="100" cy="32" rx="20" ry="26" fill="url(#dateGradient)" stroke="#D4AF37" stroke-width="0.3"/>
+  <!-- Highlight on date -->
+  <ellipse cx="100" cy="25" rx="12" ry="18" fill="url(#dateHighlight)"/>
+  <!-- Curved lines for texture -->
+  <path d="M 82 32 Q 100 30 118 32" stroke="#D4AF37" stroke-width="0.8" fill="none" opacity="0.3"/>
+  <path d="M 85 38 Q 100 36 115 38" stroke="#D4AF37" stroke-width="0.8" fill="none" opacity="0.25"/>
+  
+  <!-- Dhaoui text (serif style) - light version for dark header -->
+  <text x="100" y="78" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="bold" fill="#f8f1e7" text-anchor="middle" letter-spacing="0.5">Dhaoui</text>
+  
+  <!-- DATTES text (sans-serif style) - light version -->
+  <text x="100" y="105" font-family="'Arial', 'Helvetica', sans-serif" font-size="13" font-weight="600" fill="#d2b59a" text-anchor="middle" letter-spacing="4">DATTES</text>
+</svg>
