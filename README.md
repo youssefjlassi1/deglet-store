@@ -350,3 +350,5 @@ Application: http://localhost:4200
 - Les données initiales sont injectées automatiquement au démarrage du backend.
 - TypeORM est configuré avec `synchronize: true` pour accélérer le prototype.
 - Pour la production, il faudra ajouter migrations, paiement, upload images, logs et sécurité avancée.
+
+a
