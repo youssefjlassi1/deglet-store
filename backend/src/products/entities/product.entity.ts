@@ -19,6 +19,9 @@ export class ProductEntity {
   @Column()
   variety!: string;
 
+  @Column({ default: 'Naturelles' })
+  category!: string;
+
   @Column({ name: 'origin_region' })
   originRegion!: string;
 
@@ -27,6 +30,9 @@ export class ProductEntity {
 
   @Column({ name: 'image_url' })
   imageUrl!: string;
+
+  @Column({ default: '' })
+  grammage!: string;
 
   @Column({ type: 'float' })
   price!: number;

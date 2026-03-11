@@ -11,7 +11,7 @@
   </div>
 
   <div class="category-filters">
-    @for (category of categories; track category) {
+    @for (category of categories(); track category) {
       <button
         class="category-btn"
         [class.active]="selectedCategory() === category"

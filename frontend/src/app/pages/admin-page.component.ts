@@ -49,6 +49,8 @@ export class AdminPageComponent {
     slug: ['', Validators.required],
     description: ['', Validators.required],
     variety: ['', Validators.required],
+    category: ['', Validators.required],
+    grammage: ['', Validators.required],
     originRegion: ['', Validators.required],
     harvestYear: [2025, Validators.required],
     imageUrl: ['', Validators.required],
@@ -60,6 +62,8 @@ export class AdminPageComponent {
   protected readonly editProductForm = this.formBuilder.nonNullable.group({
     name: ['', Validators.required],
     description: ['', Validators.required],
+    category: ['', Validators.required],
+    grammage: ['', Validators.required],
     imageUrl: ['', Validators.required]
   });
 
@@ -172,6 +176,8 @@ export class AdminPageComponent {
     this.editProductForm.reset({
       name: product.name,
       description: product.description,
+      category: product.category ?? '',
+      grammage: product.grammage ?? '',
       imageUrl: product.imageUrl
     });
     this.editPreviewImage.set(product.imageUrl);
@@ -186,6 +192,8 @@ export class AdminPageComponent {
     this.editProductForm.reset({
       name: '',
       description: '',
+      category: '',
+      grammage: '',
       imageUrl: ''
     });
     this.editPreviewImage.set(null);
@@ -317,6 +325,8 @@ export class AdminPageComponent {
       slug: '',
       description: '',
       variety: '',
+      category: '',
+      grammage: '',
       originRegion: '',
       harvestYear: 2025,
       imageUrl: '',

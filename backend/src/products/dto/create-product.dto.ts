@@ -14,6 +14,9 @@ export class CreateProductDto {
   variety!: string;
 
   @IsString()
+  category!: string;
+
+  @IsString()
   originRegion!: string;
 
   @IsInt()
@@ -22,6 +25,9 @@ export class CreateProductDto {
 
   @IsString()
   imageUrl!: string;
+
+  @IsString()
+  grammage!: string;
 
   @IsNumber()
   @Min(0)

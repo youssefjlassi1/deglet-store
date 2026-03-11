@@ -28,9 +28,11 @@ export interface Product {
   slug: string;
   description: string;
   variety: string;
+  category: string;
   originRegion: string;
   harvestYear: number;
   imageUrl: string;
+  grammage?: string;
   price: number;
   stock: number;
   featured: boolean;

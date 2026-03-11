@@ -482,8 +482,35 @@
             <input type="text" formControlName="name" placeholder="Nom" />
             <input type="text" formControlName="slug" placeholder="Slug" />
             <input type="text" formControlName="variety" placeholder="Variété" />
+            <input
+              type="text"
+              formControlName="category"
+              placeholder="Ex: Naturelles, Gourmandes, Dérivés, Coffrets"
+              list="category-examples"
+              autocomplete="off" />
+            <datalist id="category-examples">
+              <option value="Naturelles"></option>
+              <option value="Gourmandes"></option>
+              <option value="Dérivés"></option>
+              <option value="Coffrets"></option>
+            </datalist>
+            <input
+              type="text"
+              formControlName="grammage"
+              placeholder="Grammage (ex: 500 g, 350 ml, 1 kg)"
+              list="grammage-examples"
+              autocomplete="off" />
+            <datalist id="grammage-examples">
+              <option value="350 g"></option>
+              <option value="400 g"></option>
+              <option value="500 g"></option>
+              <option value="350 ml"></option>
+              <option value="1 kg"></option>
+              <option value="1.5 kg"></option>
+              <option value="5 kg"></option>
+            </datalist>
             <input type="text" formControlName="originRegion" placeholder="Région" />
-            <input type="number" formControlName="harvestYear" placeholder="Récolte" />
+            <input type="number" formControlName="harvestYear" placeholder="Année récolte" />
             
             <div class="image-upload-section">
               <label class="file-upload-label">
@@ -508,8 +535,14 @@
               }
             </div>
             
-            <input type="number" formControlName="price" placeholder="Prix" />
-            <input type="number" formControlName="stock" placeholder="Stock" />
+            <div class="form-row-labeled">
+              <label class="form-label">Prix (DT)</label>
+              <input type="number" formControlName="price" placeholder="0" min="0" step="0.01" />
+            </div>
+            <div class="form-row-labeled">
+              <label class="form-label">Stock (quantité)</label>
+              <input type="number" formControlName="stock" placeholder="0" min="0" />
+            </div>
             <textarea rows="4" formControlName="description" placeholder="Description"></textarea>
             <label class="checkbox-row">
               <input type="checkbox" formControlName="featured" />
@@ -536,6 +569,22 @@
           <form class="product-form" [formGroup]="editProductForm" (ngSubmit)="saveProductChanges()">
             <input type="text" formControlName="name" placeholder="Nom du produit" />
             <textarea rows="4" formControlName="description" placeholder="Description"></textarea>
+            <input
+              type="text"
+              formControlName="category"
+              placeholder="Catégorie"
+              list="category-examples-edit"
+              autocomplete="off" />
+            <datalist id="category-examples-edit">
+              <option value="Naturelles"></option>
+              <option value="Gourmandes"></option>
+              <option value="Dérivés"></option>
+              <option value="Coffrets"></option>
+            </datalist>
+            <input
+              type="text"
+              formControlName="grammage"
+              placeholder="Grammage (ex: 500 g, 1 kg)" />
 
             <div class="image-upload-section">
               <label class="file-upload-label">

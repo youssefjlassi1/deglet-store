@@ -35,6 +35,11 @@ export class ProductsController {
     return this.productsService.findFeatured();
   }
 
+  @Get('categories')
+  getCategories() {
+    return this.productsService.findDistinctCategories();
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('upload')

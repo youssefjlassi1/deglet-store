@@ -14,6 +14,10 @@ export class ApiService {
     return this.http.get<Product[]>(`${this.baseUrl}/products`);
   }
 
+  getProductCategories(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/products/categories`);
+  }
+
   login(payload: { email: string; password: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, payload);
   }

@@ -5,8 +5,6 @@ import { ApiService } from '../core/api.service';
 import { CartService } from '../core/cart.service';
 import { Product } from '../core/models';
 
-type ProductCategory = 'Tous' | 'Naturelles' | 'Gourmandes' | 'Dérivés' | 'Coffrets';
-
 @Component({
   selector: 'app-products-page',
   standalone: true,
@@ -19,32 +17,36 @@ export class ProductsPageComponent {
   private readonly cartService = inject(CartService);
 
   protected readonly products = signal<Product[]>([]);
-  protected readonly selectedCategory = signal<ProductCategory>('Tous');
-  protected readonly categories: ProductCategory[] = ['Tous', 'Naturelles', 'Gourmandes', 'Dérivés', 'Coffrets'];
+  protected readonly categories = signal<string[]>(['Tous']);
+  protected readonly selectedCategory = signal<string>('Tous');
 
   protected readonly filteredProducts = computed(() => {
     const category = this.selectedCategory();
+    const list = this.products();
     if (category === 'Tous') {
-      return this.products();
+      return list;
     }
-    // For now, return all products. You can add category filtering logic later
-    return this.products();
+    return list.filter((p) => (p.category ?? '').trim() === category);
   });
 
   constructor() {
-    void this.loadProducts();
+    void this.loadData();
   }
 
-  async loadProducts(): Promise<void> {
+  async loadData(): Promise<void> {
     try {
-      const products = await firstValueFrom(this.apiService.getProducts());
+      const [products, apiCategories] = await Promise.all([
+        firstValueFrom(this.apiService.getProducts()),
+        firstValueFrom(this.apiService.getProductCategories()),
+      ]);
       this.products.set(products);
+      this.categories.set(['Tous', ...apiCategories]);
     } catch (error) {
       console.error('Error loading products:', error);
     }
   }
 
-  selectCategory(category: ProductCategory): void {
+  selectCategory(category: string): void {
     this.selectedCategory.set(category);
   }
 
@@ -53,16 +55,12 @@ export class ProductsPageComponent {
   }
 
   getProductWeight(product: Product): string {
-    // Mock weight based on product name or variety
-    if (product.name.toLowerCase().includes('sirop')) {
-      return '350 ml';
+    if (product.grammage?.trim()) {
+      return product.grammage.trim();
     }
-    if (product.name.toLowerCase().includes('coffret') || product.name.toLowerCase().includes('prestige')) {
-      return '1.5 kg';
-    }
-    if (product.name.toLowerCase().includes('chocolat')) {
-      return '400 g';
-    }
+    if (product.name.toLowerCase().includes('sirop')) return '350 ml';
+    if (product.name.toLowerCase().includes('coffret') || product.name.toLowerCase().includes('prestige')) return '1.5 kg';
+    if (product.name.toLowerCase().includes('chocolat')) return '400 g';
     return '500 g';
   }
 }
