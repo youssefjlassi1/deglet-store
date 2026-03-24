@@ -6,14 +6,82 @@
   </section>
 } @else {
   <section class="admin-page">
+    @if (toast(); as t) {
+      <div
+        class="admin-toast"
+        [class.admin-toast--success]="t.type === 'success'"
+        [class.admin-toast--error]="t.type === 'error'"
+        [class.admin-toast--info]="t.type === 'info'"
+        role="status"
+        aria-live="polite">
+        <span class="admin-toast__icon" aria-hidden="true">
+          @if (t.type === 'success') {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          } @else if (t.type === 'error') {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        </span>
+        <span class="admin-toast__text">{{ t.message }}</span>
+        <button type="button" class="admin-toast__close" (click)="dismissToast()" aria-label="Fermer la notification">
+          ×
+        </button>
+      </div>
+    }
+
+    @if (showConfirmModal() && confirmConfig(); as cfg) {
+      <div class="modal-overlay modal-overlay--confirm" (click)="confirmCancel()">
+        <div class="admin-confirm-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div
+            class="admin-confirm-dialog__icon"
+            [class.admin-confirm-dialog__icon--danger]="cfg.variant === 'danger'"
+            [class.admin-confirm-dialog__icon--warning]="cfg.variant === 'warning'"
+            [class.admin-confirm-dialog__icon--neutral]="cfg.variant === 'neutral'">
+            @if (cfg.variant === 'danger') {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            } @else if (cfg.variant === 'warning') {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+          </div>
+          <h2 class="admin-confirm-dialog__title">{{ cfg.title }}</h2>
+          <p class="admin-confirm-dialog__message">{{ cfg.message }}</p>
+          @if (cfg.detail) {
+            <p class="admin-confirm-dialog__detail">{{ cfg.detail }}</p>
+          }
+          <div class="admin-confirm-dialog__actions">
+            <button type="button" class="muted-button" (click)="confirmCancel()">{{ cfg.cancelLabel ?? 'Annuler' }}</button>
+            <button
+              type="button"
+              [class.danger-button]="cfg.variant === 'danger'"
+              [class.confirm-button--warning]="cfg.variant === 'warning'"
+              (click)="confirmAccept()">
+              {{ cfg.confirmLabel }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <div class="admin-header">
       <div class="admin-header__content">
         <span class="eyebrow">Dashboard Frigorifique du Sud</span>
         <h1>Pilotez la boutique, les commandes et le stock</h1>
       </div>
-      @if (feedback()) {
-        <div class="feedback-message">{{ feedback() }}</div>
-      }
     </div>
 
     @if (summary(); as data) {
@@ -91,6 +159,16 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <span>Gestion des commandes</span>
+          </button>
+          <button
+            type="button"
+            class="admin-tab-btn"
+            [class.active]="activeTab() === 'users'"
+            (click)="activeTab.set('users')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-2a4 4 0 00-4-4H11a4 4 0 00-4 4v2m10 0H7m5-8a4 4 0 100-8 4 4 0 000 8z" />
+            </svg>
+            <span>Gestion des utilisateurs</span>
           </button>
         </div>
 
@@ -373,6 +451,119 @@
             </div>
           </div>
         }
+
+        @if (activeTab() === 'users') {
+          <div class="admin-tab-content">
+            <div class="dashboard-card dashboard-card--orders dashboard-card--users">
+              <div class="dashboard-card__header">
+                <div class="dashboard-card__header-content">
+                  <div class="dashboard-card__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-2a4 4 0 00-4-4H11a4 4 0 00-4 4v2m10 0H7m5-8a4 4 0 100-8 4 4 0 000 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="eyebrow">Comptes de la plateforme</span>
+                    <h2>Gestion des utilisateurs</h2>
+                  </div>
+                </div>
+              </div>
+
+              <div class="users-toolbar">
+                <div class="users-stats">
+                  <div class="users-stat-chip">
+                    <span>Total comptes</span>
+                    <strong>{{ users().length }}</strong>
+                  </div>
+                  <div class="users-stat-chip users-stat-chip--admin">
+                    <span>Administrateurs</span>
+                    <strong>{{ data.metrics.admins }}</strong>
+                  </div>
+                  <div class="users-stat-chip users-stat-chip--client">
+                    <span>Clients</span>
+                    <strong>{{ data.metrics.clients }}</strong>
+                  </div>
+                </div>
+
+                <div class="search-box search-box--users">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Rechercher par nom, email, telephone ou role..."
+                    [value]="userSearchQuery()"
+                    (input)="userSearchQuery.set($any($event.target).value)"
+                    class="search-input" />
+                </div>
+              </div>
+
+              <div class="users-list-admin">
+                @if (getFilteredUsers().length === 0) {
+                  <div class="empty-users">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-2a4 4 0 00-4-4H11a4 4 0 00-4 4v2m10 0H7m5-8a4 4 0 100-8 4 4 0 000 8z" />
+                    </svg>
+                    <p>Aucun utilisateur ne correspond a votre recherche</p>
+                  </div>
+                } @else {
+                  @for (user of getFilteredUsers(); track user.id) {
+                    <div class="user-card-admin">
+                      <div class="user-card-admin__header">
+                        <div class="user-identity">
+                          <div class="user-avatar">{{ getUserInitials(user.fullName) }}</div>
+                          <div class="user-identity__content">
+                            <div class="user-identity__headline">
+                              <h3>{{ user.fullName }}</h3>
+                              @if (isCurrentUser(user)) {
+                                <span class="current-user-badge">Compte courant</span>
+                              }
+                            </div>
+                            <p class="user-email">{{ user.email }}</p>
+                            <div class="user-meta">
+                              <span>{{ user.phone || 'Telephone non renseigne' }}</span>
+                              <span>Inscrit le {{ user.createdAt | date: 'dd/MM/yyyy' }}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="user-role-panel">
+                          <span class="role-badge" [class.role-badge--admin]="user.role === 'admin'" [class.role-badge--client]="user.role === 'client'">
+                            {{ getUserRoleLabel(user.role) }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="user-card-admin__actions">
+                        <button type="button" class="muted-button" (click)="openUserModal(user)">
+                          Modifier
+                        </button>
+                        <button
+                          type="button"
+                          class="muted-button"
+                          [disabled]="changingUserRoleId() === user.id || isCurrentUser(user)"
+                          (click)="toggleUserRole(user)">
+                          @if (changingUserRoleId() === user.id) {
+                            Mise a jour...
+                          } @else {
+                            {{ user.role === 'admin' ? 'Retirer admin' : 'Rendre admin' }}
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          class="danger-button"
+                          [disabled]="deletingUserId() === user.id || isCurrentUser(user)"
+                          (click)="deleteUser(user)">
+                          {{ deletingUserId() === user.id ? 'Suppression...' : 'Supprimer' }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        }
       </div>
 
       <!-- Sidebar: Alerts & Top Sales (always visible) -->
@@ -611,6 +802,41 @@
             <div class="modal-actions">
               <button type="button" class="muted-button" (click)="closeEditModal()">Annuler</button>
               <button type="submit" [disabled]="savingEdit() || editUploading()">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    @if (showUserModal()) {
+      <div class="modal-overlay" (click)="closeUserModal()">
+        <div class="modal-content modal-content--compact" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Modifier un utilisateur</h2>
+            <button type="button" class="modal-close" (click)="closeUserModal()">×</button>
+          </div>
+
+          <form class="product-form" [formGroup]="userForm" (ngSubmit)="saveUserChanges()">
+            <input type="text" formControlName="fullName" placeholder="Nom complet" />
+            <input type="email" formControlName="email" placeholder="Adresse email" />
+            <input type="text" formControlName="phone" placeholder="Telephone" />
+
+            <div class="form-row-labeled">
+              <label class="form-label">Role</label>
+              <select formControlName="role">
+                <option value="client">Client</option>
+                <option value="admin">Administrateur</option>
+              </select>
+              @if (editingUser() && isCurrentUser(editingUser()!)) {
+                <p class="form-hint">Votre role administrateur reste verrouille depuis cette interface.</p>
+              }
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="muted-button" (click)="closeUserModal()">Annuler</button>
+              <button type="submit" [disabled]="savingUser()">
+                {{ savingUser() ? 'Enregistrement...' : 'Enregistrer' }}
+              </button>
             </div>
           </form>
         </div>

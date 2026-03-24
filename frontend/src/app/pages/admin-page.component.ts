@@ -1,10 +1,23 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { DashboardSummary, Order, OrderStatus, Product } from '../core/models';
+import { DashboardSummary, Order, OrderStatus, Product, User, UserRole } from '../core/models';
+
+export type ToastType = 'success' | 'error' | 'info';
+
+export type ConfirmVariant = 'danger' | 'warning' | 'neutral';
+
+export interface ConfirmDialogConfig {
+  title: string;
+  message: string;
+  detail?: string;
+  variant: ConfirmVariant;
+  confirmLabel: string;
+  cancelLabel?: string;
+}
 
 @Component({
   selector: 'app-admin-page',
@@ -13,7 +26,7 @@ import { DashboardSummary, Order, OrderStatus, Product } from '../core/models';
   templateUrl: './admin-page.component.html',
   styleUrl: './admin-page.component.scss'
 })
-export class AdminPageComponent {
+export class AdminPageComponent implements OnDestroy {
   private readonly apiService = inject(ApiService);
   protected readonly authService = inject(AuthService);
   private readonly formBuilder = inject(FormBuilder);
@@ -24,21 +37,32 @@ export class AdminPageComponent {
   protected readonly summary = signal<DashboardSummary | null>(null);
   protected readonly products = signal<Product[]>([]);
   protected readonly orders = signal<Order[]>([]);
+  protected readonly users = signal<User[]>([]);
   protected readonly loading = signal(false);
   protected readonly createUploading = signal(false);
   protected readonly editUploading = signal(false);
   protected readonly savingEdit = signal(false);
+  protected readonly savingUser = signal(false);
+  protected readonly changingUserRoleId = signal<string | null>(null);
+  protected readonly deletingUserId = signal<string | null>(null);
   protected readonly editingProductId = signal<string | null>(null);
   protected readonly editingProduct = signal<Product | null>(null);
-  protected readonly feedback = signal('');
+  protected readonly editingUser = signal<User | null>(null);
+  protected readonly toast = signal<{ message: string; type: ToastType } | null>(null);
+  protected readonly showConfirmModal = signal(false);
+  protected readonly confirmConfig = signal<ConfirmDialogConfig | null>(null);
+  private confirmResolve: ((value: boolean) => void) | null = null;
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly previewImage = signal<string | null>(null);
   protected readonly editPreviewImage = signal<string | null>(null);
   protected readonly statuses: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
   protected readonly selectedStatus = signal<OrderStatus | 'all'>('all');
   protected readonly searchQuery = signal('');
+  protected readonly userSearchQuery = signal('');
   protected readonly showCreateModal = signal(false);
   protected readonly showEditModal = signal(false);
-  protected readonly activeTab = signal<'products' | 'orders'>('products');
+  protected readonly showUserModal = signal(false);
+  protected readonly activeTab = signal<'products' | 'orders' | 'users'>('products');
 
   get allStatusesWithAll(): Array<OrderStatus | 'all'> {
     return ['all', ...this.statuses];
@@ -67,8 +91,70 @@ export class AdminPageComponent {
     imageUrl: ['', Validators.required]
   });
 
+  protected readonly userForm = this.formBuilder.nonNullable.group({
+    fullName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phone: [''],
+    role: ['client' as UserRole, Validators.required]
+  });
+
   constructor() {
     void this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
+  }
+
+  protected showToast(message: string, type: ToastType = 'info'): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
+    this.toast.set({ message, type });
+    this.toastTimer = setTimeout(() => {
+      this.toast.set(null);
+      this.toastTimer = null;
+    }, 5200);
+  }
+
+  protected dismissToast(): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
+    this.toast.set(null);
+  }
+
+  protected clearToast(): void {
+    this.dismissToast();
+  }
+
+  protected openConfirm(config: ConfirmDialogConfig): Promise<boolean> {
+    this.confirmConfig.set(config);
+    this.showConfirmModal.set(true);
+    return new Promise((resolve) => {
+      this.confirmResolve = resolve;
+    });
+  }
+
+  protected confirmAccept(): void {
+    this.showConfirmModal.set(false);
+    this.confirmConfig.set(null);
+    const resolve = this.confirmResolve;
+    this.confirmResolve = null;
+    resolve?.(true);
+  }
+
+  protected confirmCancel(): void {
+    this.showConfirmModal.set(false);
+    this.confirmConfig.set(null);
+    const resolve = this.confirmResolve;
+    this.confirmResolve = null;
+    resolve?.(false);
   }
 
   async onFileSelected(event: Event, mode: 'create' | 'edit' = 'create'): Promise<void> {
@@ -85,7 +171,7 @@ export class AdminPageComponent {
       this.editUploading.set(true);
     }
 
-    this.feedback.set('');
+    this.clearToast();
 
     try {
       const response = await firstValueFrom(this.apiService.uploadImage(file));
@@ -99,10 +185,13 @@ export class AdminPageComponent {
         this.editPreviewImage.set(fullUrl);
       }
 
-      this.feedback.set('Image uploadée avec succès.');
+      this.showToast('Image uploadée avec succès.', 'success');
     } catch (error) {
       console.error('Erreur upload:', error);
-      this.feedback.set('Erreur lors de l\'upload de l\'image. Vérifiez que le fichier est une image valide (max 5MB).');
+      this.showToast(
+        "Erreur lors de l'upload de l'image. Vérifiez que le fichier est une image valide (max 5 Mo).",
+        'error'
+      );
       if (mode === 'create') {
         this.previewImage.set(null);
       } else {
@@ -147,26 +236,26 @@ export class AdminPageComponent {
   async createProduct(): Promise<void> {
     if (this.productForm.invalid) {
       if (!this.productForm.get('imageUrl')?.value) {
-        this.feedback.set('Veuillez uploader une image pour le produit.');
+        this.showToast('Veuillez uploader une image pour le produit.', 'info');
       } else {
-        this.feedback.set('Veuillez compléter tous les champs du produit.');
+        this.showToast('Veuillez compléter tous les champs du produit.', 'info');
       }
       return;
     }
 
     if (!this.productForm.get('imageUrl')?.value) {
-      this.feedback.set('Veuillez uploader une image avant d\'ajouter le produit.');
+      this.showToast("Veuillez uploader une image avant d'ajouter le produit.", 'info');
       return;
     }
 
     try {
       await firstValueFrom(this.apiService.createProduct(this.productForm.getRawValue()));
-      this.feedback.set('Produit ajouté avec succès.');
+      this.showToast('Produit ajouté avec succès.', 'success');
       this.resetCreateForm();
       this.closeCreateModal();
       await this.loadData();
     } catch {
-      this.feedback.set('Ajout impossible. Vérifiez votre session administrateur.');
+      this.showToast('Ajout impossible. Vérifiez votre session administrateur.', 'error');
     }
   }
 
@@ -181,7 +270,7 @@ export class AdminPageComponent {
       imageUrl: product.imageUrl
     });
     this.editPreviewImage.set(product.imageUrl);
-    this.feedback.set('');
+    this.clearToast();
     this.showEditModal.set(true);
   }
 
@@ -199,6 +288,35 @@ export class AdminPageComponent {
     this.editPreviewImage.set(null);
   }
 
+  openUserModal(user: User): void {
+    this.editingUser.set(user);
+    this.userForm.reset({
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone ?? '',
+      role: user.role
+    });
+    if (this.isCurrentUser(user)) {
+      this.userForm.controls.role.disable();
+    } else {
+      this.userForm.controls.role.enable();
+    }
+    this.clearToast();
+    this.showUserModal.set(true);
+  }
+
+  closeUserModal(): void {
+    this.showUserModal.set(false);
+    this.editingUser.set(null);
+    this.userForm.controls.role.enable();
+    this.userForm.reset({
+      fullName: '',
+      email: '',
+      phone: '',
+      role: 'client'
+    });
+  }
+
   async saveProductChanges(): Promise<void> {
     const productId = this.editingProductId();
 
@@ -207,7 +325,7 @@ export class AdminPageComponent {
     }
 
     if (this.editProductForm.invalid || !this.editProductForm.get('imageUrl')?.value) {
-      this.feedback.set('Veuillez renseigner le nom, la description et une photo pour ce produit.');
+      this.showToast('Veuillez renseigner le nom, la description et une photo pour ce produit.', 'info');
       return;
     }
 
@@ -215,11 +333,11 @@ export class AdminPageComponent {
 
     try {
       await firstValueFrom(this.apiService.updateProduct(productId, this.editProductForm.getRawValue()));
-      this.feedback.set('Produit modifié avec succès.');
+      this.showToast('Produit modifié avec succès.', 'success');
       this.closeEditModal();
       await this.loadData();
     } catch {
-      this.feedback.set('Modification impossible. Vérifiez votre session administrateur.');
+      this.showToast('Modification impossible. Vérifiez votre session administrateur.', 'error');
     } finally {
       this.savingEdit.set(false);
     }
@@ -228,10 +346,10 @@ export class AdminPageComponent {
   async updateStatus(orderId: string, status: string): Promise<void> {
     try {
       await firstValueFrom(this.apiService.updateOrderStatus(orderId, status));
-      this.feedback.set('Statut de commande mis à jour.');
+      this.showToast('Statut de commande mis à jour.', 'success');
       await this.loadData();
     } catch {
-      this.feedback.set('Mise à jour du statut impossible.');
+      this.showToast('Mise à jour du statut impossible.', 'error');
     }
   }
 
@@ -282,28 +400,174 @@ export class AdminPageComponent {
     return filtered;
   }
 
+  getFilteredUsers() {
+    const query = this.userSearchQuery().trim().toLowerCase();
+
+    if (!query) {
+      return this.users();
+    }
+
+    return this.users().filter((user) =>
+      user.fullName.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      (user.phone ?? '').toLowerCase().includes(query) ||
+      this.getUserRoleLabel(user.role).toLowerCase().includes(query)
+    );
+  }
+
+  getUserRoleLabel(role: UserRole): string {
+    return role === 'admin' ? 'Administrateur' : 'Client';
+  }
+
+  getUserInitials(fullName: string): string {
+    return fullName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
+  }
+
+  isCurrentUser(user: User): boolean {
+    return this.authService.currentUser()?.id === user.id;
+  }
+
+  async saveUserChanges(): Promise<void> {
+    const user = this.editingUser();
+
+    if (!user) {
+      return;
+    }
+
+    if (this.userForm.invalid) {
+      this.showToast('Veuillez renseigner un nom, un e-mail valide et un rôle.', 'info');
+      return;
+    }
+
+    this.savingUser.set(true);
+
+    try {
+      const updatedUser = await firstValueFrom(this.apiService.updateUser(user.id, this.userForm.getRawValue()));
+
+      if (this.isCurrentUser(updatedUser)) {
+        this.authService.updateUser(updatedUser);
+      }
+
+      this.showToast('Utilisateur mis à jour avec succès.', 'success');
+      this.closeUserModal();
+      await this.loadData();
+    } catch {
+      this.showToast('Modification utilisateur impossible.', 'error');
+    } finally {
+      this.savingUser.set(false);
+    }
+  }
+
+  async toggleUserRole(user: User): Promise<void> {
+    if (this.isCurrentUser(user)) {
+      this.showToast('Vous ne pouvez pas modifier votre propre rôle administrateur.', 'info');
+      return;
+    }
+
+    const nextRole: UserRole = user.role === 'admin' ? 'client' : 'admin';
+    const actionLabel =
+      nextRole === 'admin' ? 'promouvoir cet utilisateur en administrateur' : 'retirer les droits administrateur';
+
+    const ok = await this.openConfirm({
+      title: nextRole === 'admin' ? 'Promouvoir administrateur' : 'Retirer les droits administrateur',
+      message: `Voulez-vous ${actionLabel} pour ${user.fullName} ?`,
+      detail: 'Vous pourrez annuler cette action plus tard en modifiant à nouveau le rôle.',
+      variant: nextRole === 'admin' ? 'warning' : 'danger',
+      confirmLabel: 'Confirmer',
+      cancelLabel: 'Annuler'
+    });
+
+    if (!ok) {
+      return;
+    }
+
+    this.changingUserRoleId.set(user.id);
+
+    try {
+      await firstValueFrom(this.apiService.updateUser(user.id, { role: nextRole }));
+      this.showToast(
+        nextRole === 'admin' ? 'Utilisateur promu administrateur.' : 'Droits administrateur retirés.',
+        'success'
+      );
+      await this.loadData();
+    } catch {
+      this.showToast('Changement de rôle impossible.', 'error');
+    } finally {
+      this.changingUserRoleId.set(null);
+    }
+  }
+
+  async deleteUser(user: User): Promise<void> {
+    if (this.isCurrentUser(user)) {
+      this.showToast('Vous ne pouvez pas supprimer votre propre compte.', 'info');
+      return;
+    }
+
+    const ok = await this.openConfirm({
+      title: 'Supprimer le compte',
+      message: `Supprimer définitivement le compte de ${user.fullName} ?`,
+      detail: 'Cette action est irréversible.',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler'
+    });
+
+    if (!ok) {
+      return;
+    }
+
+    this.deletingUserId.set(user.id);
+
+    try {
+      await firstValueFrom(this.apiService.deleteUser(user.id));
+      if (this.editingUser()?.id === user.id) {
+        this.closeUserModal();
+      }
+      this.showToast('Utilisateur supprimé avec succès.', 'success');
+      await this.loadData();
+    } catch {
+      this.showToast('Suppression utilisateur impossible.', 'error');
+    } finally {
+      this.deletingUserId.set(null);
+    }
+  }
+
   async toggleFeatured(product: Product): Promise<void> {
     try {
       await firstValueFrom(this.apiService.updateProduct(product.id, { featured: !product.featured }));
-      this.feedback.set('Produit mis à jour.');
+      this.showToast('Produit mis à jour.', 'success');
       await this.loadData();
     } catch {
-      this.feedback.set('Mise à jour du produit impossible.');
+      this.showToast('Mise à jour du produit impossible.', 'error');
     }
   }
 
   async restock(product: Product): Promise<void> {
     try {
       await firstValueFrom(this.apiService.updateProduct(product.id, { stock: product.stock + 20 }));
-      this.feedback.set('Stock mis à jour.');
+      this.showToast('Stock mis à jour.', 'success');
       await this.loadData();
     } catch {
-      this.feedback.set('Restock impossible.');
+      this.showToast('Réapprovisionnement impossible.', 'error');
     }
   }
 
   async deleteProduct(product: Product): Promise<void> {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer le produit "${product.name}" ? Cette action est irréversible.`)) {
+    const ok = await this.openConfirm({
+      title: 'Supprimer le produit',
+      message: `Supprimer « ${product.name} » du catalogue ?`,
+      detail: 'Cette action est irréversible.',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler'
+    });
+
+    if (!ok) {
       return;
     }
 
@@ -312,10 +576,10 @@ export class AdminPageComponent {
       if (this.editingProductId() === product.id) {
         this.closeEditModal();
       }
-      this.feedback.set('Produit supprimé avec succès.');
+      this.showToast('Produit supprimé avec succès.', 'success');
       await this.loadData();
     } catch {
-      this.feedback.set('Suppression impossible. Vérifiez votre session administrateur.');
+      this.showToast('Suppression impossible. Vérifiez votre session administrateur.', 'error');
     }
   }
 
@@ -348,15 +612,17 @@ export class AdminPageComponent {
     this.loading.set(true);
 
     try {
-      const [summary, products, orders] = await Promise.all([
+      const [summary, products, orders, users] = await Promise.all([
         firstValueFrom(this.apiService.getDashboardSummary()),
         firstValueFrom(this.apiService.getProducts()),
-        firstValueFrom(this.apiService.getOrders())
+        firstValueFrom(this.apiService.getOrders()),
+        firstValueFrom(this.apiService.getUsers())
       ]);
 
       this.summary.set(summary);
       this.products.set(products);
       this.orders.set(orders);
+      this.users.set(users);
     } finally {
       this.loading.set(false);
     }

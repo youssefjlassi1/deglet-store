@@ -52,6 +52,18 @@ export class ApiService {
     return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/summary`, this.withAuth());
   }
 
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.baseUrl}/users`, this.withAuth());
+  }
+
+  updateUser(id: string, payload: Partial<Pick<User, 'fullName' | 'email' | 'phone' | 'role'>>): Observable<User> {
+    return this.http.patch<User>(`${this.baseUrl}/users/${id}`, payload, this.withAuth());
+  }
+
+  deleteUser(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/users/${id}`, this.withAuth());
+  }
+
   createProduct(payload: Omit<Product, 'id'>): Observable<Product> {
     return this.http.post<Product>(`${this.baseUrl}/products`, payload, this.withAuth());
   }

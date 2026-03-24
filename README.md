@@ -54,10 +54,11 @@ Ce dossier contient la **logique métier partagée** (services, modèles, etc.).
   Service de panier : ajoute/supprime des produits, calcule le nombre d’articles, expose les données utilisées par le frontend.
 
 - **`api.service.ts`**  
-  Service générique pour communiquer avec le backend (requêtes HTTP centralisées : GET/POST/PUT/DELETE).
+  Service générique pour communiquer avec le backend (requêtes HTTP centralisées : GET/POST/PATCH/DELETE). Inclut notamment les appels **admin** vers `/api/users` (liste, mise à jour, suppression) avec en-tête `Authorization: Bearer …`.
 
 - **`toast.service.ts`**  
-  Service pour gérer les messages/toasts (succès, erreurs, infos) affichés via le composant `ToastComponent`.
+  Service global pour les toasts affichés via le composant `ToastComponent` (hors dashboard).  
+  **Note :** la page `admin-page` utilise également un système de **toasts intégrés** au composant (cohérent avec le thème sombre / or du back-office).
 
 - **`models.ts`**  
   Définit les interfaces/types TypeScript utilisés dans l’app (ex : `Product`, `Order`, `User`, etc.), pour taper correctement les données.
@@ -132,7 +133,8 @@ Les pages sont des composants reliés directement aux **routes**.
 - **`admin-page.component.ts` / `.html` / `.scss`**  
   Page d’administration.  
   - Accès protégé (via `admin.guard.ts` + auth).  
-  - Permet de gérer les produits, voir les commandes, statistiques, etc.  
+  - Onglets : **gestion de stock** (produits), **gestion des commandes**, **gestion des utilisateurs** (liste des comptes, édition, promotion admin / retrait admin, suppression).  
+  - Retours utilisateur **professionnels** : toasts (succès / erreur / info) et **modales de confirmation** intégrées au thème (plus de `alert` / `confirm` navigateur pour ces actions).  
   - Le fichier SCSS est volumineux car il contient tout le style du tableau de bord admin.
 
 ---
@@ -170,7 +172,7 @@ Les pages sont des composants reliés directement aux **routes**.
   Service qui gère la logique d’authentification : vérification des identifiants, génération et validation du token JWT, enregistrement des utilisateurs, etc.
 
 - **`jwt.strategy.ts`**  
-  Stratégie JWT (Passport) utilisée par Nest pour valider les tokens sur les routes protégées.
+  Stratégie JWT (Passport) : après décodage du token, **recharge l’utilisateur en base** pour que le rôle et l’identité restent alignés avec la BDD (utile après promotion / modification de compte).
 
 - **`guards/jwt-auth.guard.ts`**  
   Guard qui protège les routes nécessitant un utilisateur authentifié. Vérifie le token JWT.
@@ -193,10 +195,20 @@ Les pages sont des composants reliés directement aux **routes**.
 ### 2.2. Utilisateurs (`backend/src/users/`)
 
 - **`users.module.ts`**  
-  Module qui encapsule toute la logique liée aux utilisateurs (service, entité, éventuellement contrôleur si présent).
+  Module qui encapsule la logique utilisateurs : entité, service, **contrôleur API admin**.
+
+- **`users.controller.ts`**  
+  Routes réservées aux **administrateurs** (JWT + `RolesGuard`) :  
+  - `GET /api/users` — liste tous les utilisateurs (données « sanitizées », sans mot de passe),  
+  - `PATCH /api/users/:id` — mise à jour profil / rôle,  
+  - `DELETE /api/users/:id` — suppression d’un compte.  
+  Règles métier : impossible de supprimer ou de retirer son propre rôle admin si c’est le dernier admin ; email unique.
+
+- **`dto/update-user.dto.ts`**  
+  DTO de validation (`class-validator`) pour les champs modifiables : `fullName`, `email`, `phone`, `role`.
 
 - **`users.service.ts`**  
-  Service pour les utilisateurs : création, recherche, mise à jour, etc.
+  Service utilisateurs : création, recherche, liste, mise à jour, suppression, sanitization pour les réponses API.
 
 - **`entities/user.entity.ts`**  
   Entité TypeORM représentant la table `users` (colonnes, relations avec orders, rôle, etc.).
@@ -328,12 +340,12 @@ Application: http://localhost:4200
 - Historique des commandes
 
 ### Côté admin
-- Dashboard KPI
-- Liste des commandes
+- Dashboard KPI (commandes, CA, produits, alertes stock, top ventes)
+- Liste des commandes et filtre par statut / recherche
 - Changement de statut des commandes
-- Création de produits
-- Mise en avant de produits
-- Réapprovisionnement rapide du stock
+- Catalogue produits : création, édition, suppression, mise en avant, réapprovisionnement rapide
+- **Gestion des utilisateurs** : voir tous les comptes, modifier nom / email / téléphone / rôle, promouvoir ou retirer le rôle administrateur, supprimer un compte (avec règles de sécurité côté API)
+- **Notifications UX** : toasts (succès, erreur, info) et modales de confirmation au thème du dashboard (sans boîtes de dialogue natives du navigateur pour ces actions)
 
 ## API principale
 - `POST /api/auth/register`
@@ -346,9 +358,27 @@ Application: http://localhost:4200
 - `PATCH /api/orders/:id/status` admin
 - `GET /api/dashboard/summary` admin
 
+### Gestion des utilisateurs (admin uniquement)
+- `GET /api/users` — liste des utilisateurs
+- `PATCH /api/users/:id` — mise à jour (profil et/ou rôle)
+- `DELETE /api/users/:id` — suppression d’un utilisateur
+
+Toutes ces routes nécessitent un JWT avec le rôle **admin**.
+
 ## Remarques
 - Les données initiales sont injectées automatiquement au démarrage du backend.
 - TypeORM est configuré avec `synchronize: true` pour accélérer le prototype.
-- Pour la production, il faudra ajouter migrations, paiement, upload images, logs et sécurité avancée.
+- Pour la production, il faudra ajouter migrations, paiement, logs et sécurité avancée (l’upload d’images produits est déjà présent côté API).
+- Les **budgets de build** Angular (`angular.json`, styles par composant et bundle initial) ont été assouplis pour refléter la taille réelle des feuilles de style du dashboard admin.
 
-a
+---
+
+## Récapitulatif des ajouts récents (gestion admin & UX)
+
+| Zone | Ajout |
+|------|--------|
+| **Frontend** | Onglet « Gestion des utilisateurs » dans `admin-page`, appels `ApiService` vers `/users`, toasts + modales de confirmation |
+| **Backend** | `UsersController`, DTO `UpdateUserDto`, méthodes `findAll` / `updateUser` / `removeUser` dans `UsersService`, sécurisation JWT + rôle admin |
+| **Auth** | `JwtStrategy` : validation enrichie depuis la base pour un rôle à jour après modification de compte |
+
+Pour toute évolution, mettre à jour ce fichier et les sections correspondantes dans `frontend/README.md` / `backend/README.md` si besoin.
